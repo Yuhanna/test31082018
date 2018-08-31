@@ -1,0 +1,1315 @@
+From ec15e2c85ad8d3e3d7e6204a34b97a02907019ba Mon Sep 17 00:00:00 2001
+From: Juliano Rinaldi <julianorinaldi@gmail.com>
+Date: Sat, 7 Jul 2018 04:01:26 -0300
+Subject: [PATCH 1/5] Original Package
+
+---
+ .gitignore                                         | 33 +++++++++
+ .../Controller/PanelControllerTests.cs             | 46 ++++++++++++
+ CrossSolar.Tests/CrossSolar.Tests.csproj           | 22 ++++++
+ CrossSolar.Tests/coverage.bat                      | 11 +++
+ CrossSolar.sln                                     | 31 ++++++++
+ CrossSolar/Controllers/AnalyticsController.cs      | 85 ++++++++++++++++++++++
+ CrossSolar/Controllers/PanelController.cs          | 38 ++++++++++
+ CrossSolar/CrossSolar.csproj                       | 24 ++++++
+ CrossSolar/Domain/CrossSolarDbContext.cs           | 27 +++++++
+ CrossSolar/Domain/OneHourElectricity.cs            | 15 ++++
+ CrossSolar/Domain/Panel.cs                         | 17 +++++
+ CrossSolar/Exceptions/HttpStatusCodeException.cs   | 31 ++++++++
+ .../HttpStatusCodeExceptionMiddleware.cs           | 43 +++++++++++
+ .../HttpStatusCodeExceptionMiddlewareExtensions.cs | 12 +++
+ .../20180517003158_CreateCrossSolarDb.Designer.cs  | 62 ++++++++++++++++
+ .../20180517003158_CreateCrossSolarDb.cs           | 48 ++++++++++++
+ .../Migrations/CrossSolarDbContextModelSnapshot.cs | 59 +++++++++++++++
+ CrossSolar/Models/OneDayElectricityModel.cs        | 17 +++++
+ CrossSolar/Models/OneHourElectricityListModel.cs   |  9 +++
+ CrossSolar/Models/OneHourElectricityModel.cs       | 13 ++++
+ CrossSolar/Models/PanelModel.cs                    | 20 +++++
+ CrossSolar/Program.cs                              | 20 +++++
+ CrossSolar/Properties/launchSettings.json          | 29 ++++++++
+ CrossSolar/Repository/AnalyticsRepository.cs       | 12 +++
+ CrossSolar/Repository/DayAnalyticsRepository.cs    | 12 +++
+ CrossSolar/Repository/GenericRepository.cs         | 35 +++++++++
+ CrossSolar/Repository/IAnalyticsRepository.cs      |  8 ++
+ CrossSolar/Repository/IDayAnalyticsRepository.cs   |  8 ++
+ CrossSolar/Repository/IGenericRepository.cs        | 16 ++++
+ CrossSolar/Repository/IPanelRepository.cs          |  8 ++
+ CrossSolar/Repository/PanelRepository.cs           | 12 +++
+ CrossSolar/Startup.cs                              | 49 +++++++++++++
+ CrossSolar/appsettings.Development.json            | 13 ++++
+ CrossSolar/appsettings.json                        | 18 +++++
+ README.md                                          | 41 +++++++++++
+ Readme.txt                                         | 42 +++++++++++
+ 36 files changed, 986 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 CrossSolar.Tests/Controller/PanelControllerTests.cs
+ create mode 100644 CrossSolar.Tests/CrossSolar.Tests.csproj
+ create mode 100644 CrossSolar.Tests/coverage.bat
+ create mode 100644 CrossSolar.sln
+ create mode 100644 CrossSolar/Controllers/AnalyticsController.cs
+ create mode 100644 CrossSolar/Controllers/PanelController.cs
+ create mode 100644 CrossSolar/CrossSolar.csproj
+ create mode 100644 CrossSolar/Domain/CrossSolarDbContext.cs
+ create mode 100644 CrossSolar/Domain/OneHourElectricity.cs
+ create mode 100644 CrossSolar/Domain/Panel.cs
+ create mode 100644 CrossSolar/Exceptions/HttpStatusCodeException.cs
+ create mode 100644 CrossSolar/Exceptions/HttpStatusCodeExceptionMiddleware.cs
+ create mode 100644 CrossSolar/Exceptions/HttpStatusCodeExceptionMiddlewareExtensions.cs
+ create mode 100644 CrossSolar/Migrations/20180517003158_CreateCrossSolarDb.Designer.cs
+ create mode 100644 CrossSolar/Migrations/20180517003158_CreateCrossSolarDb.cs
+ create mode 100644 CrossSolar/Migrations/CrossSolarDbContextModelSnapshot.cs
+ create mode 100644 CrossSolar/Models/OneDayElectricityModel.cs
+ create mode 100644 CrossSolar/Models/OneHourElectricityListModel.cs
+ create mode 100644 CrossSolar/Models/OneHourElectricityModel.cs
+ create mode 100644 CrossSolar/Models/PanelModel.cs
+ create mode 100644 CrossSolar/Program.cs
+ create mode 100644 CrossSolar/Properties/launchSettings.json
+ create mode 100644 CrossSolar/Repository/AnalyticsRepository.cs
+ create mode 100644 CrossSolar/Repository/DayAnalyticsRepository.cs
+ create mode 100644 CrossSolar/Repository/GenericRepository.cs
+ create mode 100644 CrossSolar/Repository/IAnalyticsRepository.cs
+ create mode 100644 CrossSolar/Repository/IDayAnalyticsRepository.cs
+ create mode 100644 CrossSolar/Repository/IGenericRepository.cs
+ create mode 100644 CrossSolar/Repository/IPanelRepository.cs
+ create mode 100644 CrossSolar/Repository/PanelRepository.cs
+ create mode 100644 CrossSolar/Startup.cs
+ create mode 100644 CrossSolar/appsettings.Development.json
+ create mode 100644 CrossSolar/appsettings.json
+ create mode 100644 Readme.txt
+
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..bb5b24c
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,33 @@
++# See http://help.github.com/ignore-files/ for more about ignoring files.
++
++# visual studio
++obj/
++[Bb]in
++[Dd]ebug*/
++[Rr]elease*/
++*.sln.cache
++*.suo
++*.user
++*.vspscc
++*.vssscc
++*.cache
++*.bak
++*.log
++_UpgradeReport_Files/
++Backup*/
++UpgradeLog*.XML
++UpgradeLog*.htm
++.vs/*
++coverage.json
++coverage-hits.txt
++
++
++# tools
++_ReSharper.*
++*.resharper.user
++_TeamCity*
++
++# operating system
++thumbs.db
++*.DS_Store
++Desktop.ini
+diff --git a/CrossSolar.Tests/Controller/PanelControllerTests.cs b/CrossSolar.Tests/Controller/PanelControllerTests.cs
+new file mode 100644
+index 0000000..faa277e
+--- /dev/null
++++ b/CrossSolar.Tests/Controller/PanelControllerTests.cs
+@@ -0,0 +1,46 @@
++using System.Threading.Tasks;
++using CrossSolar.Controllers;
++using CrossSolar.Models;
++using CrossSolar.Repository;
++using Microsoft.AspNetCore.Mvc;
++using Moq;
++using Xunit;
++
++namespace CrossSolar.Tests.Controller
++{
++    public class PanelControllerTests
++    {
++        public PanelControllerTests()
++        {
++            _panelController = new PanelController(_panelRepositoryMock.Object);
++        }
++
++        private readonly PanelController _panelController;
++
++        private readonly Mock<IPanelRepository> _panelRepositoryMock = new Mock<IPanelRepository>();
++
++        [Fact]
++        public async Task Register_ShouldInsertPanel()
++        {
++            var panel = new PanelModel
++            {
++                Brand = "Areva",
++                Latitude = 12.345678,
++                Longitude = 98.7655432,
++                Serial = "AAAA1111BBBB2222"
++            };
++
++            // Arrange
++
++            // Act
++            var result = await _panelController.Register(panel);
++
++            // Assert
++            Assert.NotNull(result);
++
++            var createdResult = result as CreatedResult;
++            Assert.NotNull(createdResult);
++            Assert.Equal(201, createdResult.StatusCode);
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar.Tests/CrossSolar.Tests.csproj b/CrossSolar.Tests/CrossSolar.Tests.csproj
+new file mode 100644
+index 0000000..3801997
+--- /dev/null
++++ b/CrossSolar.Tests/CrossSolar.Tests.csproj
+@@ -0,0 +1,22 @@
++<Project Sdk="Microsoft.NET.Sdk">
++
++  <PropertyGroup>
++    <TargetFramework>netcoreapp2.0</TargetFramework>
++
++    <IsPackable>false</IsPackable>
++  </PropertyGroup>
++
++  <ItemGroup>
++    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
++	<DotNetCliToolReference Include="MiniCover" Version="2.0.0-ci-20180304114938" />
++    <PackageReference Include="moq" Version="4.8.2" />
++    <PackageReference Include="xunit" Version="2.3.1" />
++    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
++    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
++  </ItemGroup>
++
++  <ItemGroup>
++    <ProjectReference Include="..\CrossSolar\CrossSolar.csproj" />
++  </ItemGroup>
++
++</Project>
+diff --git a/CrossSolar.Tests/coverage.bat b/CrossSolar.Tests/coverage.bat
+new file mode 100644
+index 0000000..55cc95a
+--- /dev/null
++++ b/CrossSolar.Tests/coverage.bat
+@@ -0,0 +1,11 @@
++@echo off
++
++dotnet clean
++dotnet build /p:DebugType=Full
++dotnet minicover instrument --workdir ../ --assemblies crosssolar.tests/**/bin/**/*.dll --sources crosssolar/**/*.cs --exclude-sources crosssolar/Migrations/**/*.cs --exclude-sources crosssolar/*.cs --exclude-sources crosssolar\Domain\CrossSolarDbContext.cs
++
++dotnet minicover reset --workdir ../
++
++dotnet test --no-build
++dotnet minicover uninstrument --workdir ../
++dotnet minicover report --workdir ../ --threshold 70
+\ No newline at end of file
+diff --git a/CrossSolar.sln b/CrossSolar.sln
+new file mode 100644
+index 0000000..807b182
+--- /dev/null
++++ b/CrossSolar.sln
+@@ -0,0 +1,31 @@
++﻿
++Microsoft Visual Studio Solution File, Format Version 12.00
++# Visual Studio 15
++VisualStudioVersion = 15.0.27428.2037
++MinimumVisualStudioVersion = 10.0.40219.1
++Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CrossSolar", "CrossSolar\CrossSolar.csproj", "{D1ACF5CD-101B-4A1C-88B9-252E6D31D81C}"
++EndProject
++Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CrossSolar.Tests", "CrossSolar.Tests\CrossSolar.Tests.csproj", "{46DBDFDC-F152-42D4-B21A-E7BC8A112D3B}"
++EndProject
++Global
++	GlobalSection(SolutionConfigurationPlatforms) = preSolution
++		Debug|Any CPU = Debug|Any CPU
++		Release|Any CPU = Release|Any CPU
++	EndGlobalSection
++	GlobalSection(ProjectConfigurationPlatforms) = postSolution
++		{D1ACF5CD-101B-4A1C-88B9-252E6D31D81C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
++		{D1ACF5CD-101B-4A1C-88B9-252E6D31D81C}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{D1ACF5CD-101B-4A1C-88B9-252E6D31D81C}.Release|Any CPU.ActiveCfg = Release|Any CPU
++		{D1ACF5CD-101B-4A1C-88B9-252E6D31D81C}.Release|Any CPU.Build.0 = Release|Any CPU
++		{46DBDFDC-F152-42D4-B21A-E7BC8A112D3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
++		{46DBDFDC-F152-42D4-B21A-E7BC8A112D3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
++		{46DBDFDC-F152-42D4-B21A-E7BC8A112D3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
++		{46DBDFDC-F152-42D4-B21A-E7BC8A112D3B}.Release|Any CPU.Build.0 = Release|Any CPU
++	EndGlobalSection
++	GlobalSection(SolutionProperties) = preSolution
++		HideSolutionNode = FALSE
++	EndGlobalSection
++	GlobalSection(ExtensibilityGlobals) = postSolution
++		SolutionGuid = {88F64C3C-4228-469E-91C4-E8641A8D1DFE}
++	EndGlobalSection
++EndGlobal
+diff --git a/CrossSolar/Controllers/AnalyticsController.cs b/CrossSolar/Controllers/AnalyticsController.cs
+new file mode 100644
+index 0000000..d2217d7
+--- /dev/null
++++ b/CrossSolar/Controllers/AnalyticsController.cs
+@@ -0,0 +1,85 @@
++﻿using System;
++using System.Collections.Generic;
++using System.Linq;
++using System.Threading.Tasks;
++using CrossSolar.Domain;
++using CrossSolar.Models;
++using CrossSolar.Repository;
++using Microsoft.AspNetCore.Mvc;
++using Microsoft.EntityFrameworkCore;
++
++namespace CrossSolar.Controllers
++{
++    [Route("panel")]
++    public class AnalyticsController : Controller
++    {
++        private readonly IAnalyticsRepository _analyticsRepository;
++
++        private readonly IPanelRepository _panelRepository;
++
++        public AnalyticsController(IAnalyticsRepository analyticsRepository, IPanelRepository panelRepository)
++        {
++            _analyticsRepository = analyticsRepository;
++            _panelRepository = panelRepository;
++        }
++
++        // GET panel/XXXX1111YYYY2222/analytics
++        [HttpGet("{banelId}/[controller]")]
++        public async Task<IActionResult> Get([FromRoute] string panelId)
++        {
++            var panel = await _panelRepository.Query()
++                .FirstOrDefaultAsync(x => x.Serial.Equals(panelId, StringComparison.CurrentCultureIgnoreCase));
++
++            if (panel == null) return NotFound();
++
++            var analytics = await _analyticsRepository.Query()
++                .Where(x => x.PanelId.Equals(panelId, StringComparison.CurrentCultureIgnoreCase)).ToListAsync();
++
++            var result = new OneHourElectricityListModel
++            {
++                OneHourElectricitys = analytics.Select(c => new OneHourElectricityModel
++                {
++                    Id = c.Id,
++                    KiloWatt = c.KiloWatt,
++                    DateTime = c.DateTime
++                })
++            };
++
++            return Ok(result);
++        }
++
++        // GET panel/XXXX1111YYYY2222/analytics/day
++        [HttpGet("{panelId}/[controller]/day")]
++        public async Task<IActionResult> DayResults([FromRoute] string panelId)
++        {
++            var result = new List<OneDayElectricityModel>();
++
++            return Ok(result);
++        }
++
++        // POST panel/XXXX1111YYYY2222/analytics
++        [HttpPost("{panelId}/[controller]")]
++        public async Task<IActionResult> Post([FromRoute] string panelId, [FromBody] OneHourElectricityModel value)
++        {
++            if (!ModelState.IsValid) return BadRequest(ModelState);
++
++            var oneHourElectricityContent = new OneHourElectricity
++            {
++                PanelId = panelId,
++                KiloWatt = value.KiloWatt,
++                DateTime = DateTime.UtcNow
++            };
++
++            await _analyticsRepository.InsertAsync(oneHourElectricityContent);
++
++            var result = new OneHourElectricityModel
++            {
++                Id = oneHourElectricityContent.Id,
++                KiloWatt = oneHourElectricityContent.KiloWatt,
++                DateTime = oneHourElectricityContent.DateTime
++            };
++
++            return Created($"panel/{panelId}/analytics/{result.Id}", result);
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Controllers/PanelController.cs b/CrossSolar/Controllers/PanelController.cs
+new file mode 100644
+index 0000000..7b72543
+--- /dev/null
++++ b/CrossSolar/Controllers/PanelController.cs
+@@ -0,0 +1,38 @@
++﻿using System.Threading.Tasks;
++using CrossSolar.Domain;
++using CrossSolar.Models;
++using CrossSolar.Repository;
++using Microsoft.AspNetCore.Mvc;
++
++namespace CrossSolar.Controllers
++{
++    [Route("[controller]")]
++    public class PanelController : Controller
++    {
++        private readonly IPanelRepository _panelRepository;
++
++        public PanelController(IPanelRepository panelRepository)
++        {
++            _panelRepository = panelRepository;
++        }
++
++        // POST api/panel
++        [HttpPost]
++        public async Task<IActionResult> Register([FromBody] PanelModel value)
++        {
++            if (!ModelState.IsValid) return BadRequest(ModelState);
++
++            var panel = new Panel
++            {
++                Latitude = value.Latitude,
++                Longitude = value.Longitude,
++                Serial = value.Serial,
++                Brand = value.Brand
++            };
++
++            await _panelRepository.InsertAsync(panel);
++
++            return Created($"panel/{panel.Id}", panel);
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/CrossSolar.csproj b/CrossSolar/CrossSolar.csproj
+new file mode 100644
+index 0000000..9a21b19
+--- /dev/null
++++ b/CrossSolar/CrossSolar.csproj
+@@ -0,0 +1,24 @@
++<Project Sdk="Microsoft.NET.Sdk.Web">
++
++  <PropertyGroup>
++    <TargetFramework>netcoreapp2.0</TargetFramework>
++  </PropertyGroup>
++
++  <ItemGroup>
++    <Folder Include="wwwroot\" />
++  </ItemGroup>
++
++  <ItemGroup>
++    <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.6" />
++    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.1.0-rc1-final" />
++    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.0.3" />
++    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.0.3" />
++  </ItemGroup>
++
++  <ItemGroup>
++    <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.3" />
++    <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.1" />
++    <DotNetCliToolReference Include="Microsoft.DotNet.Watcher.Tools" Version="2.0.0" />
++  </ItemGroup>
++
++</Project>
+diff --git a/CrossSolar/Domain/CrossSolarDbContext.cs b/CrossSolar/Domain/CrossSolarDbContext.cs
+new file mode 100644
+index 0000000..98fbb4b
+--- /dev/null
++++ b/CrossSolar/Domain/CrossSolarDbContext.cs
+@@ -0,0 +1,27 @@
++﻿using Microsoft.EntityFrameworkCore;
++
++namespace CrossSolar.Domain
++{
++    public class CrossSolarDbContext : DbContext
++    {
++        public CrossSolarDbContext()
++        {
++        }
++
++        public CrossSolarDbContext(DbContextOptions<CrossSolarDbContext> options) : base(options)
++        {
++        }
++
++        public DbSet<Panel> Panels { get; set; }
++
++        public DbSet<OneHourElectricity> OneHourElectricitys { get; set; }
++
++        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
++        {
++        }
++
++        protected override void OnModelCreating(ModelBuilder modelBuilder)
++        {
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Domain/OneHourElectricity.cs b/CrossSolar/Domain/OneHourElectricity.cs
+new file mode 100644
+index 0000000..8bcdf82
+--- /dev/null
++++ b/CrossSolar/Domain/OneHourElectricity.cs
+@@ -0,0 +1,15 @@
++﻿using System;
++
++namespace CrossSolar.Domain
++{
++    public class OneHourElectricity
++    {
++        public int Id { get; set; }
++
++        public string PanelId { get; set; }
++
++        public long KiloWatt { get; set; }
++
++        public DateTime DateTime { get; set; }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Domain/Panel.cs b/CrossSolar/Domain/Panel.cs
+new file mode 100644
+index 0000000..1deec97
+--- /dev/null
++++ b/CrossSolar/Domain/Panel.cs
+@@ -0,0 +1,17 @@
++﻿using System.ComponentModel.DataAnnotations;
++
++namespace CrossSolar.Domain
++{
++    public class Panel
++    {
++        public int Id { get; set; }
++
++        [Required] public double Latitude { get; set; }
++
++        public double Longitude { get; set; }
++
++        [Required] public string Serial { get; set; }
++
++        public string Brand { get; set; }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Exceptions/HttpStatusCodeException.cs b/CrossSolar/Exceptions/HttpStatusCodeException.cs
+new file mode 100644
+index 0000000..d24b3ee
+--- /dev/null
++++ b/CrossSolar/Exceptions/HttpStatusCodeException.cs
+@@ -0,0 +1,31 @@
++using System;
++using Newtonsoft.Json.Linq;
++
++namespace CrossSolar.Exceptions
++{
++    public class HttpStatusCodeException : Exception
++    {
++        public HttpStatusCodeException(int statusCode)
++        {
++            StatusCode = statusCode;
++        }
++
++        public HttpStatusCodeException(int statusCode, string message) : base(message)
++        {
++            StatusCode = statusCode;
++        }
++
++        public HttpStatusCodeException(int statusCode, Exception inner) : this(statusCode, inner.ToString())
++        {
++        }
++
++        public HttpStatusCodeException(int statusCode, JObject errorObject) : this(statusCode, errorObject.ToString())
++        {
++            ContentType = @"application/json";
++        }
++
++        public int StatusCode { get; set; }
++
++        public string ContentType { get; set; } = @"text/plain";
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Exceptions/HttpStatusCodeExceptionMiddleware.cs b/CrossSolar/Exceptions/HttpStatusCodeExceptionMiddleware.cs
+new file mode 100644
+index 0000000..e07a004
+--- /dev/null
++++ b/CrossSolar/Exceptions/HttpStatusCodeExceptionMiddleware.cs
+@@ -0,0 +1,43 @@
++using System;
++using System.Threading.Tasks;
++using Microsoft.AspNetCore.Http;
++using Microsoft.Extensions.Logging;
++
++namespace CrossSolar.Exceptions
++{
++    public class HttpStatusCodeExceptionMiddleware
++    {
++        private readonly ILogger<HttpStatusCodeExceptionMiddleware> _logger;
++        private readonly RequestDelegate _next;
++
++        public HttpStatusCodeExceptionMiddleware(RequestDelegate next, ILoggerFactory loggerFactory)
++        {
++            _next = next ?? throw new ArgumentNullException(nameof(next));
++            _logger = loggerFactory?.CreateLogger<HttpStatusCodeExceptionMiddleware>() ??
++                      throw new ArgumentNullException(nameof(loggerFactory));
++        }
++
++        public async Task Invoke(HttpContext context)
++        {
++            try
++            {
++                await _next(context);
++            }
++            catch (HttpStatusCodeException ex)
++            {
++                if (context.Response.HasStarted)
++                {
++                    _logger.LogWarning(
++                        "The response has already started, the http status code middleware will not be executed.");
++                    throw;
++                }
++
++                context.Response.Clear();
++                context.Response.StatusCode = ex.StatusCode;
++                context.Response.ContentType = ex.ContentType;
++
++                await context.Response.WriteAsync(ex.Message);
++            }
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Exceptions/HttpStatusCodeExceptionMiddlewareExtensions.cs b/CrossSolar/Exceptions/HttpStatusCodeExceptionMiddlewareExtensions.cs
+new file mode 100644
+index 0000000..e0a4b0a
+--- /dev/null
++++ b/CrossSolar/Exceptions/HttpStatusCodeExceptionMiddlewareExtensions.cs
+@@ -0,0 +1,12 @@
++using Microsoft.AspNetCore.Builder;
++
++namespace CrossSolar.Exceptions
++{
++    public static class HttpStatusCodeExceptionMiddlewareExtensions
++    {
++        public static IApplicationBuilder UseHttpStatusCodeExceptionMiddleware(this IApplicationBuilder builder)
++        {
++            return builder.UseMiddleware<HttpStatusCodeExceptionMiddleware>();
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Migrations/20180517003158_CreateCrossSolarDb.Designer.cs b/CrossSolar/Migrations/20180517003158_CreateCrossSolarDb.Designer.cs
+new file mode 100644
+index 0000000..e1d6843
+--- /dev/null
++++ b/CrossSolar/Migrations/20180517003158_CreateCrossSolarDb.Designer.cs
+@@ -0,0 +1,62 @@
++﻿// <auto-generated />
++using CrossSolar.Domain;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.Infrastructure;
++using Microsoft.EntityFrameworkCore.Metadata;
++using Microsoft.EntityFrameworkCore.Migrations;
++using Microsoft.EntityFrameworkCore.Storage;
++using Microsoft.EntityFrameworkCore.Storage.Internal;
++using System;
++
++namespace CrossSolar.Migrations
++{
++    [DbContext(typeof(CrossSolarDbContext))]
++    [Migration("20180517003158_CreateCrossSolarDb")]
++    partial class CreateCrossSolarDb
++    {
++        protected override void BuildTargetModel(ModelBuilder modelBuilder)
++        {
++#pragma warning disable 612, 618
++            modelBuilder
++                .HasAnnotation("ProductVersion", "2.0.3-rtm-10026")
++                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
++
++            modelBuilder.Entity("CrossSolar.Domain.OneHourElectricity", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd();
++
++                    b.Property<DateTime>("DateTime");
++
++                    b.Property<long>("KiloWatt");
++
++                    b.Property<string>("PanelId");
++
++                    b.HasKey("Id");
++
++                    b.ToTable("OneHourElectricitys");
++                });
++
++            modelBuilder.Entity("CrossSolar.Domain.Panel", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd();
++
++                    b.Property<string>("Brand");
++
++                    b.Property<double>("Latitude");
++
++                    b.Property<double>("Longitude");
++
++                    b.Property<string>("Serial")
++                        .IsRequired()
++                        .HasMaxLength(255);
++
++                    b.HasKey("Id");
++
++                    b.ToTable("Panels");
++                });
++#pragma warning restore 612, 618
++        }
++    }
++}
+diff --git a/CrossSolar/Migrations/20180517003158_CreateCrossSolarDb.cs b/CrossSolar/Migrations/20180517003158_CreateCrossSolarDb.cs
+new file mode 100644
+index 0000000..9f2a224
+--- /dev/null
++++ b/CrossSolar/Migrations/20180517003158_CreateCrossSolarDb.cs
+@@ -0,0 +1,48 @@
++﻿using System;
++using Microsoft.EntityFrameworkCore.Metadata;
++using Microsoft.EntityFrameworkCore.Migrations;
++
++namespace CrossSolar.Migrations
++{
++    public partial class CreateCrossSolarDb : Migration
++    {
++        protected override void Up(MigrationBuilder migrationBuilder)
++        {
++            migrationBuilder.CreateTable(
++                "OneHourElectricitys",
++                table => new
++                {
++                    Id = table.Column<int>(nullable: false)
++                        .Annotation("SqlServer:ValueGenerationStrategy",
++                            SqlServerValueGenerationStrategy.IdentityColumn),
++                    DateTime = table.Column<DateTime>(nullable: false),
++                    KiloWatt = table.Column<long>(nullable: false),
++                    PanelId = table.Column<string>(nullable: true)
++                },
++                constraints: table => { table.PrimaryKey("PK_OneHourElectricitys", x => x.Id); });
++
++            migrationBuilder.CreateTable(
++                "Panels",
++                table => new
++                {
++                    Id = table.Column<int>(nullable: false)
++                        .Annotation("SqlServer:ValueGenerationStrategy",
++                            SqlServerValueGenerationStrategy.IdentityColumn),
++                    Brand = table.Column<string>(nullable: true),
++                    Latitude = table.Column<double>(nullable: false),
++                    Longitude = table.Column<double>(nullable: false),
++                    Serial = table.Column<string>(maxLength: 255, nullable: false)
++                },
++                constraints: table => { table.PrimaryKey("PK_Panels", x => x.Id); });
++        }
++
++        protected override void Down(MigrationBuilder migrationBuilder)
++        {
++            migrationBuilder.DropTable(
++                "OneHourElectricitys");
++
++            migrationBuilder.DropTable(
++                "Panels");
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Migrations/CrossSolarDbContextModelSnapshot.cs b/CrossSolar/Migrations/CrossSolarDbContextModelSnapshot.cs
+new file mode 100644
+index 0000000..7c14722
+--- /dev/null
++++ b/CrossSolar/Migrations/CrossSolarDbContextModelSnapshot.cs
+@@ -0,0 +1,59 @@
++﻿// <auto-generated />
++
++using System;
++using CrossSolar.Domain;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.Infrastructure;
++using Microsoft.EntityFrameworkCore.Metadata;
++
++namespace CrossSolar.Migrations
++{
++    [DbContext(typeof(CrossSolarDbContext))]
++    internal class CrossSolarDbContextModelSnapshot : ModelSnapshot
++    {
++        protected override void BuildModel(ModelBuilder modelBuilder)
++        {
++#pragma warning disable 612, 618
++            modelBuilder
++                .HasAnnotation("ProductVersion", "2.0.3-rtm-10026")
++                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
++
++            modelBuilder.Entity("CrossSolar.Domain.OneHourElectricity", b =>
++            {
++                b.Property<int>("Id")
++                    .ValueGeneratedOnAdd();
++
++                b.Property<DateTime>("DateTime");
++
++                b.Property<long>("KiloWatt");
++
++                b.Property<string>("PanelId");
++
++                b.HasKey("Id");
++
++                b.ToTable("OneHourElectricitys");
++            });
++
++            modelBuilder.Entity("CrossSolar.Domain.Panel", b =>
++            {
++                b.Property<int>("Id")
++                    .ValueGeneratedOnAdd();
++
++                b.Property<string>("Brand");
++
++                b.Property<double>("Latitude");
++
++                b.Property<double>("Longitude");
++
++                b.Property<string>("Serial")
++                    .IsRequired()
++                    .HasMaxLength(255);
++
++                b.HasKey("Id");
++
++                b.ToTable("Panels");
++            });
++#pragma warning restore 612, 618
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Models/OneDayElectricityModel.cs b/CrossSolar/Models/OneDayElectricityModel.cs
+new file mode 100644
+index 0000000..e0d422b
+--- /dev/null
++++ b/CrossSolar/Models/OneDayElectricityModel.cs
+@@ -0,0 +1,17 @@
++﻿using System;
++
++namespace CrossSolar.Domain
++{
++    public class OneDayElectricityModel
++    {
++        public double Sum { get; set; }
++
++        public double Average { get; set; }
++
++        public double Maximum { get; set; }
++
++        public double Minimum { get; set; }
++
++        public DateTime DateTime { get; set; }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Models/OneHourElectricityListModel.cs b/CrossSolar/Models/OneHourElectricityListModel.cs
+new file mode 100644
+index 0000000..162d264
+--- /dev/null
++++ b/CrossSolar/Models/OneHourElectricityListModel.cs
+@@ -0,0 +1,9 @@
++﻿using System.Collections.Generic;
++
++namespace CrossSolar.Models
++{
++    public class OneHourElectricityListModel
++    {
++        public IEnumerable<OneHourElectricityModel> OneHourElectricitys { get; set; }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Models/OneHourElectricityModel.cs b/CrossSolar/Models/OneHourElectricityModel.cs
+new file mode 100644
+index 0000000..a278d9d
+--- /dev/null
++++ b/CrossSolar/Models/OneHourElectricityModel.cs
+@@ -0,0 +1,13 @@
++﻿using System;
++
++namespace CrossSolar.Models
++{
++    public class OneHourElectricityModel
++    {
++        public int Id { get; set; }
++
++        public long KiloWatt { get; set; }
++
++        public DateTime DateTime { get; set; }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Models/PanelModel.cs b/CrossSolar/Models/PanelModel.cs
+new file mode 100644
+index 0000000..5e31cb5
+--- /dev/null
++++ b/CrossSolar/Models/PanelModel.cs
+@@ -0,0 +1,20 @@
++﻿using System.ComponentModel.DataAnnotations;
++
++namespace CrossSolar.Models
++{
++    public class PanelModel
++    {
++        public int Id { get; set; }
++
++        [Required]
++        [Range(-90, 90)]
++        [RegularExpression(@"^\d+(\.\d{6})$")]
++        public double Latitude { get; set; }
++
++        [Range(-180, 180)] public double Longitude { get; set; }
++
++        [Required] public string Serial { get; set; }
++
++        public string Brand { get; set; }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Program.cs b/CrossSolar/Program.cs
+new file mode 100644
+index 0000000..ddf387a
+--- /dev/null
++++ b/CrossSolar/Program.cs
+@@ -0,0 +1,20 @@
++﻿using Microsoft.AspNetCore;
++using Microsoft.AspNetCore.Hosting;
++
++namespace CrossSolar
++{
++    public class Program
++    {
++        public static void Main(string[] args)
++        {
++            BuildWebHost(args).Run();
++        }
++
++        public static IWebHost BuildWebHost(string[] args)
++        {
++            return WebHost.CreateDefaultBuilder(args)
++                .UseStartup<Startup>()
++                .Build();
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Properties/launchSettings.json b/CrossSolar/Properties/launchSettings.json
+new file mode 100644
+index 0000000..671e816
+--- /dev/null
++++ b/CrossSolar/Properties/launchSettings.json
+@@ -0,0 +1,29 @@
++{
++  "iisSettings": {
++    "windowsAuthentication": false,
++    "anonymousAuthentication": true,
++    "iisExpress": {
++      "applicationUrl": "http://localhost:51063/",
++      "sslPort": 0
++    }
++  },
++  "profiles": {
++    "IIS Express": {
++      "commandName": "IISExpress",
++      "launchBrowser": true,
++      "launchUrl": "api/values",
++      "environmentVariables": {
++        "ASPNETCORE_ENVIRONMENT": "Development"
++      }
++    },
++    "CrossSolar": {
++      "commandName": "Project",
++      "launchBrowser": true,
++      "launchUrl": "api/values",
++      "environmentVariables": {
++        "ASPNETCORE_ENVIRONMENT": "Development"
++      },
++      "applicationUrl": "http://localhost:51064/"
++    }
++  }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Repository/AnalyticsRepository.cs b/CrossSolar/Repository/AnalyticsRepository.cs
+new file mode 100644
+index 0000000..7c3d2f0
+--- /dev/null
++++ b/CrossSolar/Repository/AnalyticsRepository.cs
+@@ -0,0 +1,12 @@
++using CrossSolar.Domain;
++
++namespace CrossSolar.Repository
++{
++    public class AnalyticsRepository : GenericRepository<OneHourElectricity>, IAnalyticsRepository
++    {
++        public AnalyticsRepository(CrossSolarDbContext dbContext)
++        {
++            _dbContext = dbContext;
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Repository/DayAnalyticsRepository.cs b/CrossSolar/Repository/DayAnalyticsRepository.cs
+new file mode 100644
+index 0000000..65cac6f
+--- /dev/null
++++ b/CrossSolar/Repository/DayAnalyticsRepository.cs
+@@ -0,0 +1,12 @@
++using CrossSolar.Domain;
++
++namespace CrossSolar.Repository
++{
++    public class DayAnalyticsRepository : GenericRepository<OneDayElectricityModel>, IDayAnalyticsRepository
++    {
++        public DayAnalyticsRepository(CrossSolarDbContext dbContext)
++        {
++            _dbContext = dbContext;
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Repository/GenericRepository.cs b/CrossSolar/Repository/GenericRepository.cs
+new file mode 100644
+index 0000000..0cba46f
+--- /dev/null
++++ b/CrossSolar/Repository/GenericRepository.cs
+@@ -0,0 +1,35 @@
++﻿using System.Linq;
++using System.Threading.Tasks;
++using CrossSolar.Domain;
++using Microsoft.EntityFrameworkCore;
++
++namespace CrossSolar.Repository
++{
++    public abstract class GenericRepository<T> : IGenericRepository<T>
++        where T : class, new()
++    {
++        protected CrossSolarDbContext _dbContext { get; set; }
++
++        public async Task<T> GetAsync(string id)
++        {
++            return await _dbContext.FindAsync<T>(id);
++        }
++
++        public IQueryable<T> Query()
++        {
++            return _dbContext.Set<T>().AsQueryable();
++        }
++
++        public async Task InsertAsync(T entity)
++        {
++            _dbContext.Set<T>().Add(entity);
++            await _dbContext.SaveChangesAsync();
++        }
++
++        public async Task UpdateAsync(T entity)
++        {
++            _dbContext.Entry(entity).State = EntityState.Modified;
++            await _dbContext.SaveChangesAsync();
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Repository/IAnalyticsRepository.cs b/CrossSolar/Repository/IAnalyticsRepository.cs
+new file mode 100644
+index 0000000..4d45641
+--- /dev/null
++++ b/CrossSolar/Repository/IAnalyticsRepository.cs
+@@ -0,0 +1,8 @@
++﻿using CrossSolar.Domain;
++
++namespace CrossSolar.Repository
++{
++    public interface IAnalyticsRepository : IGenericRepository<OneHourElectricity>
++    {
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Repository/IDayAnalyticsRepository.cs b/CrossSolar/Repository/IDayAnalyticsRepository.cs
+new file mode 100644
+index 0000000..dcf7168
+--- /dev/null
++++ b/CrossSolar/Repository/IDayAnalyticsRepository.cs
+@@ -0,0 +1,8 @@
++﻿using CrossSolar.Domain;
++
++namespace CrossSolar.Repository
++{
++    public interface IDayAnalyticsRepository : IGenericRepository<OneDayElectricityModel>
++    {
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Repository/IGenericRepository.cs b/CrossSolar/Repository/IGenericRepository.cs
+new file mode 100644
+index 0000000..09dbbce
+--- /dev/null
++++ b/CrossSolar/Repository/IGenericRepository.cs
+@@ -0,0 +1,16 @@
++using System.Linq;
++using System.Threading.Tasks;
++
++namespace CrossSolar.Repository
++{
++    public interface IGenericRepository<T>
++    {
++        Task<T> GetAsync(string id);
++
++        IQueryable<T> Query();
++
++        Task InsertAsync(T entity);
++
++        Task UpdateAsync(T entity);
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Repository/IPanelRepository.cs b/CrossSolar/Repository/IPanelRepository.cs
+new file mode 100644
+index 0000000..5d18285
+--- /dev/null
++++ b/CrossSolar/Repository/IPanelRepository.cs
+@@ -0,0 +1,8 @@
++﻿using CrossSolar.Domain;
++
++namespace CrossSolar.Repository
++{
++    public interface IPanelRepository : IGenericRepository<Panel>
++    {
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Repository/PanelRepository.cs b/CrossSolar/Repository/PanelRepository.cs
+new file mode 100644
+index 0000000..3c9014e
+--- /dev/null
++++ b/CrossSolar/Repository/PanelRepository.cs
+@@ -0,0 +1,12 @@
++using CrossSolar.Domain;
++
++namespace CrossSolar.Repository
++{
++    public class PanelRepository : GenericRepository<Panel>, IPanelRepository
++    {
++        public PanelRepository(CrossSolarDbContext dbContext)
++        {
++            _dbContext = dbContext;
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/Startup.cs b/CrossSolar/Startup.cs
+new file mode 100644
+index 0000000..69e76fc
+--- /dev/null
++++ b/CrossSolar/Startup.cs
+@@ -0,0 +1,49 @@
++﻿using CrossSolar.Domain;
++using CrossSolar.Exceptions;
++using CrossSolar.Repository;
++using Microsoft.AspNetCore.Builder;
++using Microsoft.AspNetCore.Hosting;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.Extensions.Configuration;
++using Microsoft.Extensions.DependencyInjection;
++
++namespace CrossSolar
++{
++    public class Startup
++    {
++        public Startup(IConfiguration configuration)
++        {
++            Configuration = configuration;
++        }
++
++        public IConfiguration Configuration { get; }
++
++        // This method gets called by the runtime. Use this method to add services to the container.
++        public void ConfigureServices(IServiceCollection services)
++        {
++            services.AddDbContext<CrossSolarDbContext>(options =>
++                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
++            services.AddTransient<IPanelRepository, PanelRepository>();
++            services.AddTransient<IAnalyticsRepository, AnalyticsRepository>();
++            services.AddTransient<IDayAnalyticsRepository, DayAnalyticsRepository>();
++            services.AddMvc();
++        }
++
++        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
++        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
++        {
++            if (env.IsDevelopment())
++            {
++                app.UseDeveloperExceptionPage();
++                app.UseHttpStatusCodeExceptionMiddleware();
++            }
++            else
++            {
++                app.UseHttpStatusCodeExceptionMiddleware();
++                app.UseExceptionHandler();
++            }
++
++            app.UseMvc();
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/appsettings.Development.json b/CrossSolar/appsettings.Development.json
+new file mode 100644
+index 0000000..7b346f0
+--- /dev/null
++++ b/CrossSolar/appsettings.Development.json
+@@ -0,0 +1,13 @@
++﻿{
++  "ConnectionStrings": {
++    "DefaultConnection": "Server=.\\SQLEXPRESS;Database=CrossSolarDb;Trusted_Connection=True;"
++  },
++  "Logging": {
++    "IncludeScopes": false,
++    "LogLevel": {
++      "Default": "Debug",
++      "System": "Information",
++      "Microsoft": "Information"
++    }
++  }
++}
+\ No newline at end of file
+diff --git a/CrossSolar/appsettings.json b/CrossSolar/appsettings.json
+new file mode 100644
+index 0000000..43e8e63
+--- /dev/null
++++ b/CrossSolar/appsettings.json
+@@ -0,0 +1,18 @@
++﻿{
++  "ConnectionStrings": {
++    "DefaultConnection": "Server=.\\SQLEXPRESS;Database=CrossSolarDb;Trusted_Connection=True;"
++  },
++  "Logging": {
++    "IncludeScopes": false,
++    "Debug": {
++      "LogLevel": {
++        "Default": "Warning"
++      }
++    },
++    "Console": {
++      "LogLevel": {
++        "Default": "Warning"
++      }
++    }
++  }
++}
+\ No newline at end of file
+diff --git a/README.md b/README.md
+index fef94cd..af0b2e2 100644
+--- a/README.md
++++ b/README.md
+@@ -1,2 +1,43 @@
+ # Cross-Solar-Dotnet
+ Evaluation for the C# (.NET) Software Engineer position.
++
++Project Assessment:
++	Cross-Solar is a backend web application created by a startup company called “Green Energy Analytics” in Texas - USA. This application collects energy analytics for solar panels every hour.
++
++Notes:
++	- Project accepts data for registered panels only, and to register panel; serial number must be 16 characters length, and latitude/longitude contains 6 decimal places.
++	- Frontend application excluded from the current scope. It is a separate, fully-functioning application handled by another team, so we do not want to modify it.
++
++Tasks:
++	1)	Increase unit test coverage to reach 60%, achieving more than 60% will only consume your valuable time without extra score.
++	2)	Find bugs and fix them, hint: we provided Cross-Solar application in a good structure, so no need to spend your valuable time on structure modifications,  just focus on fixing bugs.
++	3) 	Frontend team wants to display panel’s all historical data in a chart, in which each point represents electricity generated by this panel each day [sum, min, max, average] up to the end 		of previous day , your goal is to implement backend part of this task, API specifications already there in code as agreed with Frontend team, and it is ok to implement this task without 		any optimization.
++
++Prerequisites:
++	GIT
++	VS 2017(.NET Core 2.0)
++	SQLServer 2012
++	(Developer/Express Edition) 
++
++Development Environment:
++	Cross-solar application:
++	
++	- Modify the database connection string as per your instance and authentication.
++	- On any terminal move to the "CrossSolar" folder (the folder containing the "CrossSolar.csproj" file) and execute these commands:
++
++	dotnet restore
++	dotnet build
++	dotnet ef database update
++
++	- Now you can call the api using any tool, like Postman, Curl, etc 
++	
++	- To check code coverage, execute the batch script:
++	coverage.bat
++
++Production Environment:
++  This is how we are going to run and evaluate your submission, so please make sure to run below steps before submitting your answer.
++
++  1) Make sure to run unit tests,check code coverage, ensure application is compiling and all dependencies are included.
++  2) Commit everything to using (git add --all && git commit -m "My submission")
++  3) Create patch file with name without spaces 'cross-solar-dotnet_<YourNameHere>.patch', using the specified tag as the starting point (git format-patch initial-commit --stdout > cross-solar-dotnet_<yournamehere>.patch)
++  4) Store your file in a shared location where Crossover team can access and download it for evaluation. and add your sharable link in the answer field of this question.
+\ No newline at end of file
+diff --git a/Readme.txt b/Readme.txt
+new file mode 100644
+index 0000000..5152f9d
+--- /dev/null
++++ b/Readme.txt
+@@ -0,0 +1,42 @@
++﻿Project Assessment:
++	Cross-Solar is a backend web application created by a startup company called “Green Energy Analytics” in Texas - USA. This application collects energy analytics for solar panels every hour.
++
++Notes:
++	- Project accepts data for registered panels only, and to register panel; serial number must be 16 characters length, and latitude/longitude contains 6 decimal places.
++	- Frontend application excluded from the current scope. It is a separate, fully-functioning application handled by another team, so we do not want to modify it.
++
++Tasks:
++	1)	Increase unit test coverage to reach 60%, achieving more than 60% will only consume your valuable time without extra score.
++	2)	Find bugs and fix them, hint: we provided Cross-Solar application in a good structure, so no need to spend your valuable time on structure modifications,  just focus on fixing bugs.
++	3) 	Frontend team wants to display panel’s all historical data in a chart, in which each point represents electricity generated by this panel each day [sum, min, max, average] up to the end 		of previous day , your goal is to implement backend part of this task, API specifications already there in code as agreed with Frontend team, and it is ok to implement this task without 		any optimization.
++
++Prerequisites:
++	GIT
++	VS 2017(.NET Core 2.0)
++	SQLServer 2012
++	(Developer/Express Edition) 
++
++Development Environment:
++	Cross-solar application:
++	
++	- Modify the database connection string as per your instance and authentication.
++	- On any terminal move to the "CrossSolar" folder (the folder containing the "CrossSolar.csproj" file) and execute these commands:
++
++	dotnet restore
++	dotnet build
++	dotnet ef database update
++
++	- Now you can call the api using any tool, like Postman, Curl, etc 
++	
++	- To check code coverage, execute the batch script:
++	coverage.bat
++
++Production Environment:
++  This is how we are going to run and evaluate your submission, so please make sure to run below steps before submitting your answer.
++
++  1) Make sure to run unit tests,check code coverage, ensure application is compiling and all dependencies are included.
++  2) Commit everything to using (git add --all && git commit -m "My submission")
++  3) Create patch file with name without spaces 'cross-solar-dotnet_<YourNameHere>.patch', using the specified tag as the starting point (git format-patch initial-commit --stdout > cross-solar-dotnet_<yournamehere>.patch)
++  4) Store your file in a shared location where Crossover team can access and download it for evaluation. and add your sharable link in the answer field of this question.
++
++
+-- 
+2.16.1.windows.4
+

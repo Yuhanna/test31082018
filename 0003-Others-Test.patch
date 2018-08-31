@@ -1,0 +1,374 @@
+From 61fe8f82da2948f7a9c0720e9e740f7829dcb386 Mon Sep 17 00:00:00 2001
+From: julianorinaldi <julianorinaldi@gmail.com>
+Date: Sat, 7 Jul 2018 21:59:18 -0300
+Subject: [PATCH 3/5] Others Test
+
+---
+ .../Controller/AnalyticsControllerTests.cs         | 78 +++++++++++++++++----
+ .../Controller/PanelControllerTests.cs             |  3 +-
+ CrossSolar.Tests/CrossSolar.Tests.csproj           |  1 +
+ CrossSolar.Tests/Models/PanelModelTest.cs          | 79 ++++++++++++++++++++++
+ CrossSolar/Controllers/AnalyticsController.cs      | 48 ++++++-------
+ CrossSolar/Controllers/PanelController.cs          |  4 +-
+ CrossSolar/Models/PanelModel.cs                    | 10 +--
+ 7 files changed, 177 insertions(+), 46 deletions(-)
+ create mode 100644 CrossSolar.Tests/Models/PanelModelTest.cs
+
+diff --git a/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs b/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs
+index 0d4cbdc..5048263 100644
+--- a/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs
++++ b/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs
+@@ -8,6 +8,7 @@ using CrossSolar.Models;
+ using CrossSolar.Repository;
+ using Microsoft.AspNetCore.Mvc;
+ using Microsoft.EntityFrameworkCore;
++using MockQueryable.Moq;
+ using Moq;
+ using Xunit;
+ 
+@@ -27,29 +28,33 @@ namespace CrossSolar.Tests.Controller
+         }
+ 
+         [Fact]
+-        public async Task Register_GetAnalystics()
++        public async Task Retrieve_GetAnalystics()
+         {
+             string panelId = "AAAA1111BBBB2222";
+ 
+-            var panel = new Panel
++            var mockPanels = new List<Panel>()
+             {
+-                Brand = "Areva",
+-                Latitude = 12.345678,
+-                Longitude = 98.7655432,
+-                Serial = panelId
+-            };
++                new Panel
++                {
++                    Brand = "Areva",
++                    Latitude = 12.345678,
++                    Longitude = 98.765543,
++                    Serial = panelId
++                }
++            }.AsQueryable().BuildMock();
+ 
+-            var oneHourElectricity = new OneHourElectricity()
++            var mockOneHourElectricities = new List<OneHourElectricity>() {
++            new OneHourElectricity()
+             {
+                 DateTime = new DateTime(2018, 7, 7),
+                 Id = 1,
+                 KiloWatt = 100,
+                 PanelId = panelId
+-            };
++            }
++                }            .AsQueryable().BuildMock();
+ 
+-            
+-            _panelRepositoryMock.Setup(m => m.Query()).Returns(new List<Panel>() { panel }.AsQueryable());
+-            _analyticsRepositoryMock.Setup(m => m.Query()).Returns(new List<OneHourElectricity>() { oneHourElectricity }.AsQueryable());
++            _panelRepositoryMock.Setup(m => m.Query()).Returns(mockPanels.Object);
++            _analyticsRepositoryMock.Setup(m => m.Query()).Returns(mockOneHourElectricities.Object);
+ 
+             // Act
+             var result = await _analyticsController.Get(panelId);
+@@ -57,15 +62,60 @@ namespace CrossSolar.Tests.Controller
+             // Assert
+             Assert.NotNull(result);
+ 
+-            var okResult = result as OkResult;
++            var okResult = result as OkObjectResult;
+             Assert.NotNull(okResult);
+             Assert.Equal(200, okResult.StatusCode);
+         }
+ 
++        /*
+         [Fact]
+-        public async Task Register_PostAnalystics()
++        public async Task Retrieve_DayResultsAnalystics()
++        {
++            string panelId = "AAAA1111BBBB2222";
++
++            var mockOneDayElectricities = new List<OneDayElectricityModel>() {
++                new OneDayElectricityModel()
++                {
++                    DateTime = new DateTime(2018, 7, 7),
++                    Average = 0,
++                    Maximum = 0,
++                    Minimum = 0,
++                    Sum = 0
++                }
++            }.AsQueryable().BuildMock();
++
++           // _analyticsRepositoryMock.Setup(m => m.Query()).Returns(mockOneDayElectricities.Object);
++
++            // Act
++            var result = await _analyticsController.DayResults(panelId);
++
++            // Assert
++            Assert.NotNull(result);
++
++            var okResult = result as OkObjectResult;
++            Assert.NotNull(okResult);
++            Assert.Equal(200, okResult.StatusCode);
++        }
++        */
++
++        [Fact]
++        public async Task Create_PostAnalystics()
+         {
+             string panelId = "1234567890987654";
++
++            var mockPanels = new List<Panel>()
++            {
++                new Panel
++                {
++                    Brand = "Areva",
++                    Latitude = 12.345678,
++                    Longitude = 98.765543,
++                    Serial = panelId
++                }
++            }.AsQueryable().BuildMock();
++
++            _panelRepositoryMock.Setup(m => m.Query()).Returns(mockPanels.Object);
++
+             var oneHourElectricityModel = new OneHourElectricityModel
+             {
+                 Id = 1,
+diff --git a/CrossSolar.Tests/Controller/PanelControllerTests.cs b/CrossSolar.Tests/Controller/PanelControllerTests.cs
+index faa277e..c471281 100644
+--- a/CrossSolar.Tests/Controller/PanelControllerTests.cs
++++ b/CrossSolar.Tests/Controller/PanelControllerTests.cs
+@@ -22,11 +22,12 @@ namespace CrossSolar.Tests.Controller
+         [Fact]
+         public async Task Register_ShouldInsertPanel()
+         {
++            // TODO: JULIANO - Verificar quantidade de decimais em Logitude e Latitude (Max 6 digits)
+             var panel = new PanelModel
+             {
+                 Brand = "Areva",
+                 Latitude = 12.345678,
+-                Longitude = 98.7655432,
++                Longitude = 98.765543,
+                 Serial = "AAAA1111BBBB2222"
+             };
+ 
+diff --git a/CrossSolar.Tests/CrossSolar.Tests.csproj b/CrossSolar.Tests/CrossSolar.Tests.csproj
+index 3801997..abd9bd4 100644
+--- a/CrossSolar.Tests/CrossSolar.Tests.csproj
++++ b/CrossSolar.Tests/CrossSolar.Tests.csproj
+@@ -9,6 +9,7 @@
+   <ItemGroup>
+     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
+ 	<DotNetCliToolReference Include="MiniCover" Version="2.0.0-ci-20180304114938" />
++	<PackageReference Include="MockQueryable.Moq" Version="1.0.2" />
+     <PackageReference Include="moq" Version="4.8.2" />
+     <PackageReference Include="xunit" Version="2.3.1" />
+     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+diff --git a/CrossSolar.Tests/Models/PanelModelTest.cs b/CrossSolar.Tests/Models/PanelModelTest.cs
+new file mode 100644
+index 0000000..57a6645
+--- /dev/null
++++ b/CrossSolar.Tests/Models/PanelModelTest.cs
+@@ -0,0 +1,79 @@
++﻿using System;
++using System.Collections.Generic;
++using System.ComponentModel;
++using System.ComponentModel.DataAnnotations;
++using System.Text;
++using CrossSolar.Models;
++using Xunit;
++
++namespace CrossSolar.Tests.Models
++{
++    public class PanelModelTest
++    {
++        [Fact]
++        public void ValidatePanelModel_Range()
++        {
++            var panelModelNotValid = new PanelModel
++            {
++                Brand = "Test",
++                Latitude = 90.000001,
++                Longitude = 180.000000,
++                Serial = "AAAA1111BBBB2222"
++            };
++
++            var context1 = new ValidationContext(panelModelNotValid, null, null);
++            var results1 = new List<ValidationResult>();
++            var isModelStateNotValid = Validator.TryValidateObject(panelModelNotValid, context1, results1, true);
++
++            var panelModelValid = new PanelModel
++            {
++                Brand = "Test",
++                Latitude = -90.00000,
++                Longitude = -180.000000,
++                Serial = "AAAA1111BBBB2222"
++            };
++
++            var context2 = new ValidationContext(panelModelValid, null, null);
++            var results2 = new List<ValidationResult>();
++            var isModelStateValid = Validator.TryValidateObject(panelModelValid, context2, results2, true);
++
++
++            // Assert 
++            Assert.False(isModelStateNotValid);
++            Assert.True(isModelStateValid);
++        }
++
++        [Fact]
++        public void ValidatePanelModel_Regex()
++        {
++            var panelModelNotValid = new PanelModel
++            {
++                Brand = "Test",
++                Latitude = 90.0000000,
++                Longitude = 179.0000001,
++                Serial = "AAAA1111BBBB2222"
++            };
++
++            var context1 = new ValidationContext(panelModelNotValid, null, null);
++            var results1 = new List<ValidationResult>();
++            var isModelStateNotValid = Validator.TryValidateObject(panelModelNotValid, context1, results1, true);
++
++            var panelModelValid = new PanelModel
++            {
++                Brand = "Test",
++                Latitude = -11.11,
++                Longitude = 179.999999,
++                Serial = "AAAA1111BBBB2222"
++            };
++
++            var context2 = new ValidationContext(panelModelValid, null, null);
++            var results2 = new List<ValidationResult>();
++            var isModelStateValid = Validator.TryValidateObject(panelModelValid, context2, results2, true);
++
++
++            // Assert 
++            Assert.False(isModelStateNotValid);
++            Assert.True(isModelStateValid);
++        }
++    }
++}
+diff --git a/CrossSolar/Controllers/AnalyticsController.cs b/CrossSolar/Controllers/AnalyticsController.cs
+index a3e2e3e..b180751 100644
+--- a/CrossSolar/Controllers/AnalyticsController.cs
++++ b/CrossSolar/Controllers/AnalyticsController.cs
+@@ -28,41 +28,35 @@ namespace CrossSolar.Controllers
+         [HttpGet("{banelId}/[controller]")]
+         public async Task<IActionResult> Get([FromRoute, StringLength(16), Required] string panelId)
+         {
+-            try
+-            {
+-
+-                var panel = await _panelRepository.Query()
+-                    .FirstOrDefaultAsync(x => x.Serial.Equals(panelId, StringComparison.CurrentCultureIgnoreCase));
++            var panel = await _panelRepository.Query()
++                .FirstOrDefaultAsync(x => x.Serial.Equals(panelId, StringComparison.CurrentCultureIgnoreCase));
+ 
+-                if (panel == null) return NotFound();
++            if (panel == null) return NotFound();
+ 
+-                var analytics = await _analyticsRepository.Query()
+-                    .Where(x => x.PanelId.Equals(panelId, StringComparison.CurrentCultureIgnoreCase)).ToListAsync();
++            var analytics = await _analyticsRepository.Query()
++                .Where(x => x.PanelId.Equals(panelId, StringComparison.CurrentCultureIgnoreCase)).ToListAsync();
+ 
+-                var result = new OneHourElectricityListModel
+-                {
+-                    OneHourElectricitys = analytics.Select(c => new OneHourElectricityModel
+-                    {
+-                        Id = c.Id,
+-                        KiloWatt = c.KiloWatt,
+-                        DateTime = c.DateTime
+-                    })
+-                };
+-
+-                return Ok(result);
+-
+-            }
+-            catch (Exception e)
++            var result = new OneHourElectricityListModel
+             {
+-                Console.WriteLine(e);
+-                throw;
+-            }
++                OneHourElectricitys = analytics.Select(c => new OneHourElectricityModel
++                {
++                    Id = c.Id,
++                    KiloWatt = c.KiloWatt,
++                    DateTime = c.DateTime
++                })
++            };
++
++            return Ok(result);
+         }
+ 
+         // GET panel/XXXX1111YYYY2222/analytics/day
+         [HttpGet("{panelId}/[controller]/day")]
+         public async Task<IActionResult> DayResults([FromRoute, StringLength(16), Required] string panelId)
+         {
++
++            //TODO: Bug Fix - Get Elements - Verificar enunciado
++            //3) A equipe de front-end deseja exibir todos os dados históricos do painel em um gráfico, no qual cada ponto representa a eletricidade gerada por esse painel a cada dia [soma, min, max, média] até o final do dia anterior, seu objetivo é implementar backend parte dessa tarefa, as especificações da API já estão no código, conforme acordado com a equipe do Frontend, e não há problema em implementar essa tarefa sem qualquer otimização.
++
+             var result = new List<OneDayElectricityModel>();
+ 
+             return Ok(result);
+@@ -74,7 +68,9 @@ namespace CrossSolar.Controllers
+         {
+             if (!ModelState.IsValid) return BadRequest(ModelState);
+ 
+-            //TODO: Verify If Exists {panelId}
++            // BUG FIX - Check Exists Panel
++            if (!_panelRepository.Query().Any(x => x.Serial.Equals(panelId, StringComparison.CurrentCultureIgnoreCase)))
++                return BadRequest();
+ 
+             var oneHourElectricityContent = new OneHourElectricity
+             {
+diff --git a/CrossSolar/Controllers/PanelController.cs b/CrossSolar/Controllers/PanelController.cs
+index 7b72543..d6b43ac 100644
+--- a/CrossSolar/Controllers/PanelController.cs
++++ b/CrossSolar/Controllers/PanelController.cs
+@@ -1,4 +1,5 @@
+-﻿using System.Threading.Tasks;
++﻿using System;
++using System.Threading.Tasks;
+ using CrossSolar.Domain;
+ using CrossSolar.Models;
+ using CrossSolar.Repository;
+@@ -20,6 +21,7 @@ namespace CrossSolar.Controllers
+         [HttpPost]
+         public async Task<IActionResult> Register([FromBody] PanelModel value)
+         {
++            
+             if (!ModelState.IsValid) return BadRequest(ModelState);
+ 
+             var panel = new Panel
+diff --git a/CrossSolar/Models/PanelModel.cs b/CrossSolar/Models/PanelModel.cs
+index 925ce2a..6b75ad4 100644
+--- a/CrossSolar/Models/PanelModel.cs
++++ b/CrossSolar/Models/PanelModel.cs
+@@ -7,13 +7,15 @@ namespace CrossSolar.Models
+         public int Id { get; set; }
+ 
+         [Required]
+-        [Range(-90, 90)]
+-        [RegularExpression(@"^\d+(\.\d{6})$")]
++        [Range(-90.000000, 90.000000)]
++        // Others Culuture for NumberDecimalSeparator 
++        [RegularExpression(@"^-?\d+((\.|\,)\d{1,6})?$", ErrorMessage = "The field {0} must match the pattern -00.000000 or 00.000000")]
+         public double Latitude { get; set; }
+ 
+         [Required]
+-        [Range(-180, 180)]
+-        [RegularExpression(@"^\d+(\.\d{6})$")]
++        [Range(-180.000000, 180.000000)]
++        // Others Culuture for NumberDecimalSeparator 
++        [RegularExpression(@"^-?\d+((\.|\,)\d{1,6})?$", ErrorMessage = "The field {0} must match the pattern -000.000000 or 000.000000")]
+         public double Longitude { get; set; }
+ 
+         [Required]
+-- 
+2.16.1.windows.4
+

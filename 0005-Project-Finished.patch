@@ -1,0 +1,159 @@
+From f66f9457e2d17b0d96193bb4f9837dfb88f25183 Mon Sep 17 00:00:00 2001
+From: julianorinaldi <julianorinaldi@gmail.com>
+Date: Sun, 8 Jul 2018 01:30:54 -0300
+Subject: [PATCH 5/5] Project Finished
+
+---
+ .../Controller/AnalyticsControllerTests.cs         | 45 +++++++++++++++++-----
+ CrossSolar/Domain/OneHourElectricity.cs            |  5 +++
+ CrossSolar/Domain/Panel.cs                         | 14 ++++++-
+ README.md                                          |  4 ++
+ 4 files changed, 56 insertions(+), 12 deletions(-)
+
+diff --git a/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs b/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs
+index be98b86..ac1ab80 100644
+--- a/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs
++++ b/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs
+@@ -51,7 +51,7 @@ namespace CrossSolar.Tests.Controller
+                 KiloWatt = 100,
+                 PanelId = panelId
+             }
+-                }            .AsQueryable().BuildMock();
++                }.AsQueryable().BuildMock();
+ 
+             _panelRepositoryMock.Setup(m => m.Query()).Returns(mockPanels.Object);
+             _analyticsRepositoryMock.Setup(m => m.Query()).Returns(mockOneHourElectricities.Object);
+@@ -67,24 +67,49 @@ namespace CrossSolar.Tests.Controller
+             Assert.Equal(200, okResult.StatusCode);
+         }
+ 
+-        /*
+         [Fact]
+         public async Task Retrieve_DayResultsAnalystics()
+         {
+             string panelId = "AAAA1111BBBB2222";
+ 
+-            var mockOneDayElectricities = new List<OneDayElectricityModel>() {
+-                new OneDayElectricityModel()
++            var mockPanels = new List<Panel>()
++            {
++                new Panel
++                {
++                    Brand = "Areva",
++                    Latitude = 12.345678,
++                    Longitude = 98.765543,
++                    Serial = panelId
++                }
++            }.AsQueryable().BuildMock();
++
++            _panelRepositoryMock.Setup(m => m.Query()).Returns(mockPanels.Object);
++
++            var mockOneDayElectricities = new List<OneHourElectricity>() {
++                new OneHourElectricity()
++                {
++                    Id = 3,
++                    PanelId = panelId,
++                    DateTime = new DateTime(2018, 7, 5),
++                    KiloWatt = 100
++                },
++                new OneHourElectricity()
+                 {
++                    Id = 4,
++                    PanelId = panelId,
++                    DateTime = new DateTime(2018, 7, 6),
++                    KiloWatt = 200
++                },
++                new OneHourElectricity()
++                {
++                    Id = 5,
++                    PanelId = panelId,
+                     DateTime = new DateTime(2018, 7, 7),
+-                    Average = 0,
+-                    Maximum = 0,
+-                    Minimum = 0,
+-                    Sum = 0
++                    KiloWatt = 300
+                 }
+             }.AsQueryable().BuildMock();
+ 
+-           // _analyticsRepositoryMock.Setup(m => m.Query()).Returns(mockOneDayElectricities.Object);
++            _analyticsRepositoryMock.Setup(m => m.Query()).Returns(mockOneDayElectricities.Object);
+ 
+             // Act
+             var result = await _analyticsController.DayResults(panelId);
+@@ -96,7 +121,7 @@ namespace CrossSolar.Tests.Controller
+             Assert.NotNull(okResult);
+             Assert.Equal(200, okResult.StatusCode);
+         }
+-        */
++
+ 
+         [Fact]
+         public async Task Create_PostAnalystics()
+diff --git a/CrossSolar/Domain/OneHourElectricity.cs b/CrossSolar/Domain/OneHourElectricity.cs
+index 09a5377..a546627 100644
+--- a/CrossSolar/Domain/OneHourElectricity.cs
++++ b/CrossSolar/Domain/OneHourElectricity.cs
+@@ -7,10 +7,15 @@ namespace CrossSolar.Domain
+     {
+         public int Id { get; set; }
+ 
++        [Required]
++        [StringLength(16)]
+         public string PanelId { get; set; }
+ 
++        [Required]
++        [Range(0, 10000000000)]
+         public long KiloWatt { get; set; }
+ 
++        [Required]
+         public DateTime DateTime { get; set; }
+     }
+ }
+\ No newline at end of file
+diff --git a/CrossSolar/Domain/Panel.cs b/CrossSolar/Domain/Panel.cs
+index 1deec97..4d96fe6 100644
+--- a/CrossSolar/Domain/Panel.cs
++++ b/CrossSolar/Domain/Panel.cs
+@@ -6,11 +6,21 @@ namespace CrossSolar.Domain
+     {
+         public int Id { get; set; }
+ 
+-        [Required] public double Latitude { get; set; }
++        [Required]
++        [Range(-90.000000, 90.000000)]
++        // Others Culuture for NumberDecimalSeparator 
++        [RegularExpression(@"^-?\d+((\.|\,)\d{1,6})?$", ErrorMessage = "The field {0} must match the pattern -00.000000 or 00.000000")]
++        public double Latitude { get; set; }
+ 
++        [Required]
++        [Range(-180.000000, 180.000000)]
++        // Others Culuture for NumberDecimalSeparator 
++        [RegularExpression(@"^-?\d+((\.|\,)\d{1,6})?$", ErrorMessage = "The field {0} must match the pattern -000.000000 or 000.000000")]
+         public double Longitude { get; set; }
+ 
+-        [Required] public string Serial { get; set; }
++        [Required]
++        [StringLength(16)]
++        public string Serial { get; set; }
+ 
+         public string Brand { get; set; }
+     }
+diff --git a/README.md b/README.md
+index af0b2e2..2b3af12 100644
+--- a/README.md
++++ b/README.md
+@@ -1,6 +1,10 @@
+ # Cross-Solar-Dotnet
+ Evaluation for the C# (.NET) Software Engineer position.
+ 
++Project Completed:
++API Docs: https://documenter.getpostman.com/view/3227215/RWM8UXjJ
++
++
+ Project Assessment:
+ 	Cross-Solar is a backend web application created by a startup company called “Green Energy Analytics” in Texas - USA. This application collects energy analytics for solar panels every hour.
+ 
+-- 
+2.16.1.windows.4
+

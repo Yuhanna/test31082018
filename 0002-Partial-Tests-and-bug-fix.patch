@@ -1,0 +1,224 @@
+From abd7769f1b1e8ce0e9f65114d9400eb2182136d8 Mon Sep 17 00:00:00 2001
+From: Juliano Rinaldi <julianorinaldi@gmail.com>
+Date: Sat, 7 Jul 2018 11:42:43 -0300
+Subject: [PATCH 2/5] Partial Tests and bug fix
+
+---
+ .../Controller/AnalyticsControllerTests.cs         | 87 ++++++++++++++++++++++
+ CrossSolar/Controllers/AnalyticsController.cs      | 47 +++++++-----
+ CrossSolar/Domain/OneHourElectricity.cs            |  1 +
+ CrossSolar/Models/PanelModel.cs                    |  9 ++-
+ 4 files changed, 125 insertions(+), 19 deletions(-)
+ create mode 100644 CrossSolar.Tests/Controller/AnalyticsControllerTests.cs
+
+diff --git a/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs b/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs
+new file mode 100644
+index 0000000..0d4cbdc
+--- /dev/null
++++ b/CrossSolar.Tests/Controller/AnalyticsControllerTests.cs
+@@ -0,0 +1,87 @@
++﻿using System;
++using System.Collections.Generic;
++using System.Linq;
++using System.Threading.Tasks;
++using CrossSolar.Controllers;
++using CrossSolar.Domain;
++using CrossSolar.Models;
++using CrossSolar.Repository;
++using Microsoft.AspNetCore.Mvc;
++using Microsoft.EntityFrameworkCore;
++using Moq;
++using Xunit;
++
++namespace CrossSolar.Tests.Controller
++{
++    public class AnalyticsControllerTests
++    {
++
++        private readonly AnalyticsController _analyticsController;
++
++        private readonly Mock<IAnalyticsRepository> _analyticsRepositoryMock = new Mock<IAnalyticsRepository>();
++        private readonly Mock<IPanelRepository> _panelRepositoryMock = new Mock<IPanelRepository>();
++
++        public AnalyticsControllerTests()
++        {
++            _analyticsController = new AnalyticsController(_analyticsRepositoryMock.Object, _panelRepositoryMock.Object);
++        }
++
++        [Fact]
++        public async Task Register_GetAnalystics()
++        {
++            string panelId = "AAAA1111BBBB2222";
++
++            var panel = new Panel
++            {
++                Brand = "Areva",
++                Latitude = 12.345678,
++                Longitude = 98.7655432,
++                Serial = panelId
++            };
++
++            var oneHourElectricity = new OneHourElectricity()
++            {
++                DateTime = new DateTime(2018, 7, 7),
++                Id = 1,
++                KiloWatt = 100,
++                PanelId = panelId
++            };
++
++            
++            _panelRepositoryMock.Setup(m => m.Query()).Returns(new List<Panel>() { panel }.AsQueryable());
++            _analyticsRepositoryMock.Setup(m => m.Query()).Returns(new List<OneHourElectricity>() { oneHourElectricity }.AsQueryable());
++
++            // Act
++            var result = await _analyticsController.Get(panelId);
++
++            // Assert
++            Assert.NotNull(result);
++
++            var okResult = result as OkResult;
++            Assert.NotNull(okResult);
++            Assert.Equal(200, okResult.StatusCode);
++        }
++
++        [Fact]
++        public async Task Register_PostAnalystics()
++        {
++            string panelId = "1234567890987654";
++            var oneHourElectricityModel = new OneHourElectricityModel
++            {
++                Id = 1,
++                DateTime = DateTime.Now,
++                KiloWatt = 100
++            };
++
++            // Act
++            var result = await _analyticsController.Post(panelId, oneHourElectricityModel);
++
++            // Assert
++            Assert.NotNull(result);
++
++            var createdResult = result as CreatedResult;
++            Assert.NotNull(createdResult);
++            Assert.Equal(201, createdResult.StatusCode);
++        }
++    }
++}
+diff --git a/CrossSolar/Controllers/AnalyticsController.cs b/CrossSolar/Controllers/AnalyticsController.cs
+index d2217d7..a3e2e3e 100644
+--- a/CrossSolar/Controllers/AnalyticsController.cs
++++ b/CrossSolar/Controllers/AnalyticsController.cs
+@@ -1,5 +1,6 @@
+ ﻿using System;
+ using System.Collections.Generic;
++using System.ComponentModel.DataAnnotations;
+ using System.Linq;
+ using System.Threading.Tasks;
+ using CrossSolar.Domain;
+@@ -25,32 +26,42 @@ namespace CrossSolar.Controllers
+ 
+         // GET panel/XXXX1111YYYY2222/analytics
+         [HttpGet("{banelId}/[controller]")]
+-        public async Task<IActionResult> Get([FromRoute] string panelId)
++        public async Task<IActionResult> Get([FromRoute, StringLength(16), Required] string panelId)
+         {
+-            var panel = await _panelRepository.Query()
+-                .FirstOrDefaultAsync(x => x.Serial.Equals(panelId, StringComparison.CurrentCultureIgnoreCase));
++            try
++            {
+ 
+-            if (panel == null) return NotFound();
++                var panel = await _panelRepository.Query()
++                    .FirstOrDefaultAsync(x => x.Serial.Equals(panelId, StringComparison.CurrentCultureIgnoreCase));
+ 
+-            var analytics = await _analyticsRepository.Query()
+-                .Where(x => x.PanelId.Equals(panelId, StringComparison.CurrentCultureIgnoreCase)).ToListAsync();
++                if (panel == null) return NotFound();
+ 
+-            var result = new OneHourElectricityListModel
+-            {
+-                OneHourElectricitys = analytics.Select(c => new OneHourElectricityModel
++                var analytics = await _analyticsRepository.Query()
++                    .Where(x => x.PanelId.Equals(panelId, StringComparison.CurrentCultureIgnoreCase)).ToListAsync();
++
++                var result = new OneHourElectricityListModel
+                 {
+-                    Id = c.Id,
+-                    KiloWatt = c.KiloWatt,
+-                    DateTime = c.DateTime
+-                })
+-            };
++                    OneHourElectricitys = analytics.Select(c => new OneHourElectricityModel
++                    {
++                        Id = c.Id,
++                        KiloWatt = c.KiloWatt,
++                        DateTime = c.DateTime
++                    })
++                };
+ 
+-            return Ok(result);
++                return Ok(result);
++
++            }
++            catch (Exception e)
++            {
++                Console.WriteLine(e);
++                throw;
++            }
+         }
+ 
+         // GET panel/XXXX1111YYYY2222/analytics/day
+         [HttpGet("{panelId}/[controller]/day")]
+-        public async Task<IActionResult> DayResults([FromRoute] string panelId)
++        public async Task<IActionResult> DayResults([FromRoute, StringLength(16), Required] string panelId)
+         {
+             var result = new List<OneDayElectricityModel>();
+ 
+@@ -59,10 +70,12 @@ namespace CrossSolar.Controllers
+ 
+         // POST panel/XXXX1111YYYY2222/analytics
+         [HttpPost("{panelId}/[controller]")]
+-        public async Task<IActionResult> Post([FromRoute] string panelId, [FromBody] OneHourElectricityModel value)
++        public async Task<IActionResult> Post([FromRoute, StringLength(16), Required] string panelId, [FromBody] OneHourElectricityModel value)
+         {
+             if (!ModelState.IsValid) return BadRequest(ModelState);
+ 
++            //TODO: Verify If Exists {panelId}
++
+             var oneHourElectricityContent = new OneHourElectricity
+             {
+                 PanelId = panelId,
+diff --git a/CrossSolar/Domain/OneHourElectricity.cs b/CrossSolar/Domain/OneHourElectricity.cs
+index 8bcdf82..09a5377 100644
+--- a/CrossSolar/Domain/OneHourElectricity.cs
++++ b/CrossSolar/Domain/OneHourElectricity.cs
+@@ -1,4 +1,5 @@
+ ﻿using System;
++using System.ComponentModel.DataAnnotations;
+ 
+ namespace CrossSolar.Domain
+ {
+diff --git a/CrossSolar/Models/PanelModel.cs b/CrossSolar/Models/PanelModel.cs
+index 5e31cb5..925ce2a 100644
+--- a/CrossSolar/Models/PanelModel.cs
++++ b/CrossSolar/Models/PanelModel.cs
+@@ -11,9 +11,14 @@ namespace CrossSolar.Models
+         [RegularExpression(@"^\d+(\.\d{6})$")]
+         public double Latitude { get; set; }
+ 
+-        [Range(-180, 180)] public double Longitude { get; set; }
++        [Required]
++        [Range(-180, 180)]
++        [RegularExpression(@"^\d+(\.\d{6})$")]
++        public double Longitude { get; set; }
+ 
+-        [Required] public string Serial { get; set; }
++        [Required]
++        [StringLength(16)]
++        public string Serial { get; set; }
+ 
+         public string Brand { get; set; }
+     }
+-- 
+2.16.1.windows.4
+
